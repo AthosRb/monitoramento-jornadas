@@ -74,5 +74,7 @@ Projeto desenvolvido como iniciativa de aprendizado em desenvolvimento web, auto
 **Tecnologias:** HTML, CSS e JavaScript.
 
 ---
-*DEV | Athos_RB* /n
-*Projeto educacional em evolução.*
+
+Athos Reis | Desenvolvedor de Business Intelligence
+
+---
