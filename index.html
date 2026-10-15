@@ -1,0 +1,340 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monitoramento de Jornadas</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px 16px;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 560px;
+            margin: 30px auto;
+            padding: 28px;
+            background: #131b2e;
+            border: 1px solid #26344c;
+            border-radius: 16px;
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 25px;
+        }
+
+        .descricao {
+            color: #94a3b8;
+            line-height: 1.5;
+            margin-bottom: 28px;
+        }
+
+        label {
+            display: block;
+            margin: 18px 0 8px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            background: #0f172a;
+            color: white;
+            font-size: 16px;
+        }
+
+        input:focus {
+            outline: 2px solid #3b82f6;
+            border-color: #3b82f6;
+        }
+
+        .botoes {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        button {
+            flex: 1;
+            padding: 13px 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .calcular {
+            background: #2563eb;
+            color: white;
+        }
+
+        .novo {
+            background: #334155;
+            color: white;
+        }
+
+        .finalizar {
+            width: 100%;
+            margin-top: 10px;
+            background: transparent;
+            color: #f87171;
+            border: 1px solid #7f1d1d;
+        }
+
+        button:hover {
+            filter: brightness(1.15);
+        }
+
+        .resultado {
+            display: none;
+            margin-top: 25px;
+            padding: 22px;
+            border-radius: 12px;
+            background: #1e293b;
+        }
+
+        .resultado h2 {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #94a3b8;
+        }
+
+        .valor {
+            margin: 8px 0;
+            color: #7dd3fc;
+            font-size: 38px;
+            font-weight: bold;
+            overflow-wrap: anywhere;
+        }
+
+        .detalhes {
+            color: #cbd5e1;
+            line-height: 1.8;
+            font-size: 14px;
+        }
+
+        .mensagem {
+            color: #fbbf24;
+            font-size: 14px;
+            margin-top: 14px;
+        }
+
+        @media (max-width: 420px) {
+            .container {
+                padding: 20px;
+            }
+
+            .botoes {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="container" id="painel">
+        <h1>Monitoramento de Jornadas</h1>
+
+        <p class="descricao">
+            Informe os dados da equipe para calcular
+            o indicador de ocorrências de jornada.
+        </p>
+
+        <form id="formulario">
+            <label for="equipe">Nome da equipe</label>
+            <input
+                id="equipe"
+                type="text"
+                placeholder="Ex.: Equipe de Vendas"
+                required
+            >
+
+            <label for="colaboradores">
+                Quantidade de colaboradores
+            </label>
+            <input
+                id="colaboradores"
+                type="number"
+                min="1"
+                step="1"
+                placeholder="Ex.: 19"
+                required
+            >
+
+            <label for="eventos">
+                Quantidade de eventos de jornada
+            </label>
+            <input
+                id="eventos"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Ex.: 3"
+                required
+            >
+
+            <div class="botoes">
+                <button class="calcular" type="submit">
+                    Calcular resultado
+                </button>
+
+                <button
+                    class="novo"
+                    type="button"
+                    id="novo"
+                >
+                    Novo cálculo
+                </button>
+            </div>
+        </form>
+
+        <section class="resultado" id="resultado"
+                 aria-live="polite">
+            <h2>RESULTADO PARA A PLANILHA</h2>
+            <div class="valor" id="valor">0,00</div>
+
+            <div class="detalhes" id="detalhes"></div>
+
+            <button
+                type="button"
+                class="novo"
+                id="copiar"
+                style="width: 100%; margin-top: 16px;"
+            >
+                Copiar resultado
+            </button>
+        </section>
+
+        <p class="mensagem" id="mensagem"
+           role="status"></p>
+
+        <button
+            type="button"
+            class="finalizar"
+            id="finalizar"
+        >
+            Finalizar sessão
+        </button>
+    </main>
+
+    <script>
+        const formulario = document.getElementById("formulario");
+        const resultado = document.getElementById("resultado");
+        const mensagem = document.getElementById("mensagem");
+
+        const formatar = numero =>
+            numero.toLocaleString("pt-BR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+
+        formulario.addEventListener("submit", function(event) {
+            event.preventDefault();
+
+            const equipe = document
+                .getElementById("equipe").value.trim();
+
+            const colaboradores = Number(
+                document.getElementById("colaboradores").value
+            );
+
+            const eventos = Number(
+                document.getElementById("eventos").value
+            );
+
+            if (
+                !equipe ||
+                !Number.isInteger(colaboradores) ||
+                colaboradores <= 0 ||
+                !Number.isInteger(eventos) ||
+                eventos < 0
+            ) {
+                mensagem.textContent =
+                    "Preencha os campos corretamente.";
+                resultado.style.display = "none";
+                return;
+            }
+
+            // Lógica original em Python, convertida para JavaScript
+            const fator = colaboradores / 100;
+            const calculo = (eventos * fator) - 100;
+            const valorPositivo = Math.abs(calculo);
+
+            document.getElementById("valor").textContent =
+                formatar(valorPositivo);
+
+            document.getElementById("detalhes").innerHTML =
+                `<strong>Equipe:</strong> ${equipe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;")}<br>` +
+                `<strong>Colaboradores:</strong> ${colaboradores}<br>` +
+                `<strong>Eventos:</strong> ${eventos}<br>` +
+                `<strong>Cálculo original:</strong> ${formatar(calculo)}`;
+
+            resultado.style.display = "block";
+            mensagem.textContent = "";
+        });
+
+        document.getElementById("novo").addEventListener(
+            "click", function() {
+                formulario.reset();
+                resultado.style.display = "none";
+                mensagem.textContent = "";
+                document.getElementById("equipe").focus();
+            }
+        );
+
+        document.getElementById("copiar").addEventListener(
+            "click", async function() {
+                const valor =
+                    document.getElementById("valor").textContent;
+
+                try {
+                    await navigator.clipboard.writeText(valor);
+                    mensagem.textContent =
+                        "Resultado copiado para a área de transferência.";
+                } catch {
+                    mensagem.textContent =
+                        "Não foi possível copiar automaticamente. " +
+                        "Selecione o resultado e copie manualmente.";
+                }
+            }
+        );
+
+        document.getElementById("finalizar").addEventListener(
+            "click", function() {
+                document.getElementById("painel").innerHTML = `
+                    <h1>Sessão finalizada</h1>
+                    <p class="descricao">
+                        A análise foi encerrada.
+                        Os resultados não foram salvos.
+                    </p>
+                    <button class="calcular" id="reiniciar"
+                            style="width: 100%;">
+                        Iniciar nova sessão
+                    </button>
+                `;
+
+                document.getElementById("reiniciar")
+                    .addEventListener("click", function() {
+                        window.location.reload();
+                    });
+            }
+        );
+    </script>
+</body>
+</html>
